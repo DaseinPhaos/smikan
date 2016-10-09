@@ -5,25 +5,25 @@
     --------
     ##Example
     ```python
-    import smikan
+        import smikan
 
-    # Starting from a homepage
-    homepage = smikan.get_homepage()
+        # Starting from a homepage
+        homepage = smikan.get_homepage()
 
-    # Finding bangumis by broadcasting date
-    print(hp.fri)
+        # Finding bangumis by broadcasting date
+        print(hp.fri)
 
-    # Grabing details from a particular bangumi
-    bangumi = hp.fri[0]
-    bangumi.get()
-    print(bangumi.subtitles)
+        # Grabing details from a particular bangumi
+        bangumi = hp.fri[0]
+        bangumi.get()
+        print(bangumi.subtitles)
     
-    # Check which season the homepage is currently in
-    print(homepage.period)
+        # Check which season the homepage is currently in
+        print(homepage.period)
 
-    # Navigate to another season
-    homepage.change_period(homepage.periods[1])
-    print(homepage.fri)
+        # Navigate to another season
+        homepage.change_period(homepage.periods[1])
+        print(homepage.fri)
     ```
     --------
     ##License
