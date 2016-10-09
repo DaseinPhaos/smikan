@@ -1,3 +1,46 @@
+"""
+    ##Introduction
+    **smikan**, a simple module grabbing bangumi information from http://mikanani.me
+    The API is kindof messing for the time being but using it is quiet simple.
+    --------
+    ##Example
+    ```python
+    import smikan
+
+    # Starting from a homepage
+    homepage = smikan.get_homepage()
+
+    # Finding bangumis by broadcasting date
+    print(hp.fri)
+
+    # Grabing details from a particular bangumi
+    bangumi = hp.fri[0]
+    bangumi.get()
+    print(bangumi.subtitles)
+    
+    # Check which season the homepage is currently in
+    print(homepage.period)
+
+    # Navigate to another season
+    homepage.change_period(homepage.periods[1])
+    print(homepage.fri)
+    ```
+    --------
+    ##License
+
+    This module is distributed under the MIT license (https://opensource.org/licenses/MIT).
+
+    Copyright (c) 2016 Dasein Phaos
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
+
+
 from bs4 import BeautifulSoup
 import datetime
 import requests
@@ -31,20 +74,32 @@ def _get_post_data(period):
     return {"year":int(splitted[0]),"seasonStr":splitted[1][0]}
 
 def start_session():
+    """
+        Prepare to start a new connection session with http://mikanani.me
+    """
     global _session
     _session = requests.Session()
     _session.headers.update(_base_headers)
     
 def close_session():
+    """
+        Close the current connection session with http://mikanani.me
+    """
     global _session
     _session.close()
 
 def restart_session():
+    """
+        Close and prepare to restart the connection session with http://mikanani.me
+    """
     close_session()
     start_session()
 
 
 class EpResource:
+"""
+    A self-explainable episode resource item.
+"""
     def __init__(self, name:str, info_url: str, size:float, update_time: datetime.datetime, magnet_link:str, torrent_link:str):
         self.name = name
         self.info_url = info_url
@@ -54,9 +109,12 @@ class EpResource:
         self.torrent_link = torrent_link
 
     def __repr__(self):
-        return "[\"Title: {0}\", size: {1}MB]".format(self.name, self.size)
+        return "[Title: \"{0}\", size: {1}MB]".format(self.name, self.size)
 
 class Bangumi:
+"""
+    A self-explainable bangumi item.
+"""
     def __init__(self, name:str, update_time:datetime.date, url: str):
         self.name = name
         self.update_time = update_time
@@ -69,6 +127,9 @@ class Bangumi:
         return "\n[Title: {0}\n Descrption: {1}]\n".format(self.name, self.intro)
 
     def feed(self, bsoup:BeautifulSoup):
+    """
+        Save details to data members using soup constructing from the bangumi's html-page.
+    """
         leftbar = bsoup.find("div", "pull-left leftbar-container")
         poster_rurl = leftbar.find("div", "bangumi-poster")["style"]
         poster_rurl = poster_rurl[(poster_rurl.find("'")+1): poster_rurl.rfind("'")]
@@ -109,6 +170,12 @@ class Bangumi:
             sgt_tag = last_tag.find_next("div", "subgroup-text")
 
     def get(self, timeout = 10):
+    """
+        Save details to data members via information fetched from self.url
+
+        `timeout`: the longest time to wait for responce from mikanani.me before
+            raising a `requests.exceptions.ConnectTimeout`  
+    """
         # r = requests.get(self.url, timeout = timeout)
         r = _session.get(_mikan_url, headers = _base_headers, timeout = timeout)
         if r.status_code != 200: r.raise_for_status_code()
@@ -117,6 +184,9 @@ class Bangumi:
 
 
 class HomePage:
+"""
+    Analog to mikanani's homepage.
+"""
     def __init__(self):
         self.periods = []
         self.period = ""
@@ -131,7 +201,7 @@ class HomePage:
         self.sat = []
         self.sun = []
 
-    def find_target(self, weekday:str):
+    def _find_target(self, weekday:str):
         if weekday == "星期一": return self.mon
         if weekday == "星期二": return self.tue
         if weekday == "星期三": return self.wed
@@ -142,6 +212,10 @@ class HomePage:
         raise ValueError() 
 
     def feed_p(self, soup:BeautifulSoup):
+    """
+        Initialize bangumi-data contents using `soup`, which should be constructed
+        from a .html containing valid infos. e.g. mikanani's homepage. 
+    """
         subsoups = soup.find_all("div", "sk-bangumi")
         for subsoup in subsoups:
             weekday = subsoup.find_next("div", "row").contents[0].strip()
@@ -165,6 +239,10 @@ class HomePage:
                 target.append(bangumi)
     
     def feed(self, soup:BeautifulSoup):
+    """
+        Initialize data menbers using `soup`, which should be constructed
+        from a .html containing valid infos. e.g. mikanani's homepage. 
+    """
         psoup = soup.find("li", "sk-col dropdown date-btn")
         self.period = psoup.find_next("div", "sk-col date-text").contents[0].strip()
         periods = psoup.find_all(lambda tag: tag.name == "a" and tag.has_attr("data-season"))
@@ -174,6 +252,9 @@ class HomePage:
         self.feed_p(soup)
 
     def change_period(self, period):
+    """
+        Change the bangumi-data members according to the new season period specified. 
+    """
         global _session
         post_data = _get_post_data(period)
         r = _session.post(_post_url, json=post_data, headers = _post_headers)
@@ -183,6 +264,12 @@ class HomePage:
 
 
 def get_homepage(timeout = 10):
+"""
+    Return a new `HomePage` containing infos fetched from mikanani.me.
+
+    `timeout`: the longest time to wait for responce from mikanani.me before
+        raising a `requests.exceptions.ConnectTimeout`  
+"""
     r = _session.get(_mikan_url, timeout = timeout, headers = _get_headers)
     #r = requests.get(_mikan_url, timeout = timeout)
     if r.status_code != 200: r.raise_for_status_code()

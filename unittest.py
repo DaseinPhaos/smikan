@@ -1,17 +1,19 @@
 import smikan
 import copy
 
-hp = smikan.get_homepage()
-ohp = copy.deepcopy(hp)
+homepage = smikan.get_homepage()
 
-print(ohp.fri)
-lp = ohp.periods[1]
-print(lp)
-
-hp.change_period(lp)
+# Finding bangumis by broadcasting date
 print(hp.fri)
 
-jojo = ohp.fri[0]
-jojo.get()
-print(jojo.subtitles)
+# Grabing details from a particular bangumi
+bangumi = hp.fri[0]
+bangumi.get()
+print(bangumi.subtitles)
+    
+# Check which season the homepage is currently in
+print(homepage.period)
 
+# Navigate to another season
+homepage.change_period(homepage.periods[1])
+print(homepage.fri)
