@@ -3,6 +3,46 @@ import datetime
 import requests
 
 _mikan_url = "http://mikanani.me"
+_post_url = "http://mikanani.me/Home/BangumiCoverFlowByDayOfWeek"
+_base_headers = {
+     'Host': 'mikanani.me',
+     'Connection': 'keep-alive',
+     'Accept-Encoding': 'gzip, deflate',
+     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36',
+     'Cookie': '__cfduid=de118d7462a8fe4b0a72c074e4165e2401473314399; mikan-announcement=3',
+     'Accept': '*/*',
+     'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4,ja;q=0.2',
+}
+_get_headers = {'Upgrade-Insecure-Requests': '1', 'Cache-Control': 'max-age=0'}
+_post_headers = {'Origin': 'http://mikanani.me', 
+'Content-Length': '31', 
+'Referer': 'http://mikanani.me/', 
+'X-Requested-With': 'XMLHttpRequest', 
+'Content-Type': 'application/json; charset=UTF-8'}
+_post_params = {"httpVersion": "HTTP/1.1", "queryString": [], "headersSize": 569, "bodySize": 29}
+
+
+_session = requests.Session()
+_session.headers.update(_base_headers)
+
+def _get_post_data(period):
+    splitted = period.split()
+    assert(len(splitted) == 2)
+    return {"year":int(splitted[0]),"seasonStr":splitted[1][0]}
+
+def start_session():
+    global _session
+    _session = requests.Session()
+    _session.headers.update(_base_headers)
+    
+def close_session():
+    global _session
+    _session.close()
+
+def restart_session():
+    close_session()
+    start_session()
+
 
 class EpResource:
     def __init__(self, name:str, info_url: str, size:float, update_time: datetime.datetime, magnet_link:str, torrent_link:str):
@@ -69,7 +109,8 @@ class Bangumi:
             sgt_tag = last_tag.find_next("div", "subgroup-text")
 
     def get(self, timeout = 10):
-        r = requests.get(self.url, timeout = timeout)
+        # r = requests.get(self.url, timeout = timeout)
+        r = _session.get(_mikan_url, headers = _base_headers, timeout = timeout)
         if r.status_code != 200: r.raise_for_status_code()
         soup = BeautifulSoup(r.content, "html.parser")
         self.feed(soup)
@@ -97,12 +138,7 @@ class HomePage:
         if weekday == "星期日": return self.sun
         raise ValueError() 
 
-    def feed(self, soup:BeautifulSoup):
-        psoup = soup.find("li", "sk-col dropdown date-btn")
-        self.period = psoup.find_next("div", "sk-col date-text").contents[0].strip()
-        periods = psoup.find_all(lambda tag: tag.name == "a" and tag.has_attr("data-season"))
-        for p in periods:
-            self.periods.append("{0} {1}".format(p["data-year"], p.contents[0].strip()))
+    def feed_p(self, soup:BeautifulSoup):
         subsoups = soup.find_all("div", "sk-bangumi")
         for subsoup in subsoups:
             weekday = subsoup.find_next("div", "row").contents[0].strip()
@@ -120,10 +156,27 @@ class HomePage:
                 a_tag = bangumi_tag.find(lambda tag: tag.name == "a" and tag.has_attr("title"))
                 bangumi = Bangumi(a_tag['title'], datetime.date(int(update_time[2]), int(update_time[0]), int(update_time[1])), _mikan_url + a_tag['href'])
                 target.append(bangumi)
+    
+    def feed(self, soup:BeautifulSoup):
+        psoup = soup.find("li", "sk-col dropdown date-btn")
+        self.period = psoup.find_next("div", "sk-col date-text").contents[0].strip()
+        periods = psoup.find_all(lambda tag: tag.name == "a" and tag.has_attr("data-season"))
+        for p in periods:
+            self.periods.append("{0} {1}".format(p["data-year"], p.contents[0].strip()))
+        self.feed_p(soup)
+
+    def change_period(period):
+        global _session
+        post_data = _get_post_data(period)
+        r = _session.post(_post_url, json=post_data, headers = _post_headers)
+        if r.status_code != 200: r.raise_for_status_code()
+        soup = BeautifulSoup(r.content, "html.parser")
+        self.feed_p(soup)    
 
 
 def get_homepage(timeout = 10):
-    r = requests.get(_mikan_url, timeout = timeout)
+    r = _session.get(_mikan_url, timeout = timeout, headers = _get_headers)
+    #r = requests.get(_mikan_url, timeout = timeout)
     if r.status_code != 200: r.raise_for_status_code()
     hp = HomePage()
     soup = BeautifulSoup(r.content, "html.parser")
