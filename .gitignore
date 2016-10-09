@@ -1,3 +1,4 @@
 thtml/
 .vs/
 .vscode/
+__pycache__/

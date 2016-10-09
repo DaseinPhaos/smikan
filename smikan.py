@@ -118,6 +118,11 @@ class Bangumi:
 
 class HomePage:
     def __init__(self):
+        self.periods = []
+        self.period = ""
+        self._reset_bangumi_data()
+
+    def _reset_bangumi_data(self):
         self.mon = []
         self.tue = []
         self.wed = []
@@ -125,8 +130,6 @@ class HomePage:
         self.fri = []
         self.sat = []
         self.sun = []
-        self.periods = []
-        self.period = ""
 
     def find_target(self, weekday:str):
         if weekday == "星期一": return self.mon
@@ -154,7 +157,11 @@ class HomePage:
             for bangumi_tag in bangumis:
                 update_time = bangumi_tag.find("div", "date-text").string.strip().split(" ")[0].split("/")
                 a_tag = bangumi_tag.find(lambda tag: tag.name == "a" and tag.has_attr("title"))
-                bangumi = Bangumi(a_tag['title'], datetime.date(int(update_time[2]), int(update_time[0]), int(update_time[1])), _mikan_url + a_tag['href'])
+                bangumi = None
+                if len(update_time[0]) == 4:
+                    bangumi = Bangumi(a_tag['title'], datetime.date(int(update_time[0]), int(update_time[1]), int(update_time[2])), _mikan_url + a_tag['href'])
+                else:
+                    bangumi = Bangumi(a_tag['title'], datetime.date(int(update_time[2]), int(update_time[0]), int(update_time[1])), _mikan_url + a_tag['href'])
                 target.append(bangumi)
     
     def feed(self, soup:BeautifulSoup):
@@ -163,9 +170,10 @@ class HomePage:
         periods = psoup.find_all(lambda tag: tag.name == "a" and tag.has_attr("data-season"))
         for p in periods:
             self.periods.append("{0} {1}".format(p["data-year"], p.contents[0].strip()))
+        self._reset_bangumi_data()
         self.feed_p(soup)
 
-    def change_period(period):
+    def change_period(self, period):
         global _session
         post_data = _get_post_data(period)
         r = _session.post(_post_url, json=post_data, headers = _post_headers)
