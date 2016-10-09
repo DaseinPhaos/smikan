@@ -1,7 +1,8 @@
 ##Introduction
 **smikan**, a simple module grabbing bangumi information from http://mikanani.me
+
 The API is kindof messing for the time being but using it is quiet simple.
---------
+
 ##Example
 ```python
     import smikan
@@ -24,7 +25,6 @@ The API is kindof messing for the time being but using it is quiet simple.
     homepage.change_period(homepage.periods[1])
     print(homepage.fri)
 ```
---------
 ##License
 
 This module is distributed under the MIT license (https://opensource.org/licenses/MIT).
