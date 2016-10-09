@@ -1,7 +1,7 @@
 ##Introduction
-    **smikan**, a simple module grabbing bangumi information from http://mikanani.me
-    The API is kindof messing for the time being but using it is quiet simple.
-    --------
+**smikan**, a simple module grabbing bangumi information from http://mikanani.me
+The API is kindof messing for the time being but using it is quiet simple.
+--------
 ##Example
 ```python
     import smikan
