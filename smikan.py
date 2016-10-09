@@ -36,17 +36,7 @@ class Bangumi:
         self.name = leftbar.find("p", "bangumi-title").contents[0].strip()
         infos = leftbar.find_all("p", "bangumi-info")
         for info in infos:
-            # info_str = info.string
-            # if info_str == None or info_str == "":
-            #     info_str = ""
-            #     for s in info.strings:
-            #         info_str = info_str + s.strip()
             info_str = ""
-            # try:
-            #     for s in info.strings:
-            #         info_str = info_str + s.strip()
-            # except StopIteration as identifier:
-            #     pass
             for s in info.strings:
                 info_str = info_str + s.strip()
             splitted = info_str.split("：", 1)
@@ -78,7 +68,7 @@ class Bangumi:
                 sgtl.append(EpResource(rname, rinfo_url, rsize, rdt, rmagnet, rtorrent))
             sgt_tag = last_tag.find_next("div", "subgroup-text")
 
-    def get_content(self, timeout = 10):
+    def get(self, timeout = 10):
         r = requests.get(self.url, timeout = timeout)
         if r.status_code != 200: r.raise_for_status_code()
         soup = BeautifulSoup(r.content, "html.parser")

@@ -1,7 +1,7 @@
-import mikanapi
+import smikan
 
-hp = mikanapi.get_homepage()
-print(hp.fri)
+hp = smikan.get_homepage()
+print(hp)
 jojo = hp.fri[0]
 jojo.get_content()
 print(jojo.subtitles)
